@@ -1,11 +1,32 @@
-import { readFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { FakePlanner } from '../src/fakePlanner.js';
 import { VERSION } from '../src/version.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+
+let tempRoot: string | undefined;
+
+afterEach(() => {
+  if (tempRoot) {
+    rmSync(tempRoot, { recursive: true, force: true });
+    tempRoot = undefined;
+  }
+});
+
+function makeTempRepo(journalNames: string[]): string {
+  const dir = mkdtempSync(join(tmpdir(), 'seedling-fake-'));
+  mkdirSync(join(dir, 'src'), { recursive: true });
+  mkdirSync(join(dir, 'journal'), { recursive: true });
+  writeFileSync(join(dir, 'src', 'version.ts'), `export const VERSION = '${VERSION}';\n`, 'utf8');
+  for (const name of journalNames) {
+    writeFileSync(join(dir, 'journal', name), `# ${name}\n`, 'utf8');
+  }
+  return dir;
+}
 
 describe('VERSION', () => {
   it('is semver-ish (major.minor.patch)', () => {
@@ -14,13 +35,14 @@ describe('VERSION', () => {
 });
 
 describe('FakePlanner', () => {
-  it('returns a plan that bumps VERSION', async () => {
+  it('bumps VERSION when journal count is even', async () => {
+    tempRoot = makeTempRepo(['0000-a.md', '0001-b.md']);
     const planner = new FakePlanner();
     const plan = await planner.propose({
       northStar: 'test',
       latestJournal: 'test',
       version: VERSION,
-      rootDir: root,
+      rootDir: tempRoot,
     });
 
     expect(plan.summary).toMatch(/Bump VERSION/);
@@ -33,6 +55,24 @@ describe('FakePlanner', () => {
     const [, , , patch] = match!;
     const currentPatch = VERSION.split('.')[2]!;
     expect(Number(patch)).toBe(Number(currentPatch) + 1);
+  });
+
+  it('appends a journal note when journal count is odd', async () => {
+    tempRoot = makeTempRepo(['0000-a.md']);
+    const planner = new FakePlanner();
+    const plan = await planner.propose({
+      northStar: 'test',
+      latestJournal: 'test',
+      version: VERSION,
+      rootDir: tempRoot,
+    });
+
+    expect(plan.summary).toMatch(/Append journal note/);
+    expect(plan.targetPath).toContain('journal');
+    expect(plan.targetPath).toMatch(/0001-fake-evolve\.md$/);
+    expect(plan.commitMessage).toMatch(/^evolve: append journal/);
+    expect(plan.newContents).toMatch(/FakePlanner evolve note/);
+    expect(plan.newContents).toMatch(/plan → edit → test → commit/);
   });
 
   it('can parse the on-disk version.ts', () => {
