@@ -1,7 +1,8 @@
 import { spawnSync } from 'node:child_process';
-import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { applyWithTestGate } from './applyChange.js';
 import { FakePlanner } from './fakePlanner.js';
 import type { Planner, PlannerContext } from './types.js';
 import { VERSION } from './version.js';
@@ -70,12 +71,11 @@ async function evolve(): Promise<void> {
   if (!plan.targetPath.startsWith(ROOT)) {
     throw new Error(`Refuse to write outside repo root: ${plan.targetPath}`);
   }
-  writeFileSync(plan.targetPath, plan.newContents, 'utf8');
-  console.log('[evolve] applied change to', plan.targetPath);
 
-  const ok = runTests(ROOT);
-  if (!ok) {
-    console.error('[evolve] tests failed — leaving change in place for inspection');
+  console.log('[evolve] applying change to', plan.targetPath);
+  const result = applyWithTestGate(plan.targetPath, plan.newContents, () => runTests(ROOT));
+  if (!result.ok) {
+    console.error('[evolve] tests failed — restored previous contents');
     process.exitCode = 1;
     return;
   }
