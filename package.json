@@ -1,0 +1,32 @@
+{
+  "name": "seedling",
+  "version": "0.1.0",
+  "description": "Self-evolving coding agent bootstrap — plan, edit, test, commit, grow.",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "seedling": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "evolve": "tsx src/evolve.ts",
+    "start": "tsx src/index.ts"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "agent",
+    "evolve",
+    "coding-agent"
+  ],
+  "author": "Loreonsol",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}
