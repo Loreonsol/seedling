@@ -43,6 +43,7 @@ describe('FakePlanner', () => {
       latestJournal: 'test',
       version: VERSION,
       rootDir: tempRoot,
+      openIssues: '(no open issues)',
     });
 
     expect(plan.summary).toMatch(/Bump VERSION/);
@@ -65,6 +66,7 @@ describe('FakePlanner', () => {
       latestJournal: 'test',
       version: VERSION,
       rootDir: tempRoot,
+      openIssues: '(no open issues)',
     });
 
     expect(plan.summary).toMatch(/Append journal note/);
@@ -73,6 +75,23 @@ describe('FakePlanner', () => {
     expect(plan.commitMessage).toMatch(/^evolve: append journal/);
     expect(plan.newContents).toMatch(/FakePlanner evolve note/);
     expect(plan.newContents).toMatch(/plan → edit → test → commit/);
+  });
+
+
+  it('surfaces open issues in journal notes', async () => {
+    tempRoot = makeTempRepo(['0000-a.md']);
+    const planner = new FakePlanner();
+    const plan = await planner.propose({
+      northStar: 'test',
+      latestJournal: 'test',
+      version: VERSION,
+      rootDir: tempRoot,
+      openIssues: '- #7: teach planner to prefer issue titles',
+    });
+
+    expect(plan.summary).toMatch(/Append journal note/);
+    expect(plan.newContents).toMatch(/## Open issues \(steer\)/);
+    expect(plan.newContents).toContain('#7: teach planner to prefer issue titles');
   });
 
   it('can parse the on-disk version.ts', () => {

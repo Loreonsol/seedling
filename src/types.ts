@@ -18,6 +18,8 @@ export interface PlannerContext {
   latestJournal: string;
   version: string;
   rootDir: string;
+  /** Open GitHub issues summary for steering (or placeholder). */
+  openIssues: string;
 }
 
 export interface Planner {

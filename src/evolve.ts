@@ -4,6 +4,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { applyWithTestGate } from './applyChange.js';
 import { FakePlanner } from './fakePlanner.js';
+import { loadOpenIssues } from './loadIssues.js';
 import type { Planner, PlannerContext } from './types.js';
 import { VERSION } from './version.js';
 
@@ -54,11 +55,15 @@ async function evolve(): Promise<void> {
     ? readFileSync(northStarPath, 'utf8')
     : '(missing NORTH_STAR.md)';
 
+  const openIssues = loadOpenIssues(ROOT);
+  console.log('[evolve] open issues:\n' + openIssues);
+
   const ctx: PlannerContext = {
     northStar,
     latestJournal: latestJournal(ROOT),
     version: VERSION,
     rootDir: ROOT,
+    openIssues,
   };
 
   const planner = createPlanner();

@@ -73,6 +73,10 @@ so the planner practices a second safe edit shape (new file under \`journal/\`).
 North star: plan → edit → test → commit with tiny, reversible steps and more
 than one deterministic proposal type.
 
+## Open issues (steer)
+
+${ctx.openIssues || '(no open issues)'}
+
 ## Next
 
 Steer via GitHub issues. Optional OpenAI-compatible planner behind \`SEEDLING_API_KEY\`.
