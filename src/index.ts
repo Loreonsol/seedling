@@ -22,3 +22,4 @@ if (args.includes('-h') || args.includes('--help')) {
 console.log(`seedling v${VERSION}`);
 console.log('North star: local coding agent that plans, edits, tests, commits, and grows.');
 console.log('Run `npm run evolve` (FakePlanner by default; HttpPlanner when SEEDLING_API_KEY is set).');
+console.log('Open GitHub issues steer FakePlanner toward a bounded src/steerTarget.ts edit.');

@@ -5,22 +5,23 @@ import type { Plan, Planner, PlannerContext } from './types.js';
 
 /**
  * Deterministic offline planner — no API keys.
- * Prefers the first open GitHub issue title when any exist (human steer).
+ * Prefers the first open GitHub issue title when any exist (human steer):
+ * proposes a bounded src/steerTarget.ts edit shaped by that title.
  * Otherwise alternates VERSION bump vs journal note by journal count.
  */
 export class FakePlanner implements Planner {
   async propose(ctx: PlannerContext): Promise<Plan> {
     const journals = listJournalFiles(ctx.rootDir);
     const steered = parseFirstOpenIssue(ctx.openIssues);
-    // Humans steer via issues: prefer a journal note that cites the first issue.
+    // Humans steer via issues: bounded code edit shaped by the issue title.
     if (steered) {
-      return proposeJournalNote(ctx, journals, steered);
+      return proposeSteerTarget(ctx, steered);
     }
     // Even count → VERSION bump; odd count → next journal file.
     if (journals.length % 2 === 0) {
       return proposeVersionBump(ctx);
     }
-    return proposeJournalNote(ctx, journals, null);
+    return proposeJournalNote(ctx, journals);
   }
 }
 
@@ -54,11 +55,46 @@ function proposeVersionBump(ctx: PlannerContext): Plan {
   };
 }
 
-function proposeJournalNote(
+/** Escape a title for a single-quoted TypeScript string literal. */
+export function sanitizeSteerTitle(title: string, maxLen = 120): string {
+  const trimmed = title.replace(/[\r\n\u0000-\u001f]/g, ' ').trim().slice(0, maxLen);
+  return trimmed.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+}
+
+/**
+ * Bounded code edit shaped by the first open issue title.
+ * Writes src/steerTarget.ts — reviewable, no secrets, reversible.
+ */
+export function buildSteerTargetContents(issue: {
+  number: number;
+  title: string;
+}): string {
+  const safeTitle = sanitizeSteerTitle(issue.title);
+  return `/**
+ * Last human steer captured by FakePlanner from open GitHub issues.
+ * Regenerated on steered evolve cycles — safe, reviewable, no secrets.
+ */
+export const STEER_ISSUE = ${issue.number};
+export const STEER_TITLE = '${safeTitle}';
+`;
+}
+
+function proposeSteerTarget(
   ctx: PlannerContext,
-  journals: string[],
-  steered: { number: number; title: string } | null,
+  steered: { number: number; title: string },
 ): Plan {
+  const targetPath = join(ctx.rootDir, 'src', 'steerTarget.ts');
+  const newContents = buildSteerTargetContents(steered);
+
+  return {
+    summary: `Record steer #${steered.number} in steerTarget.ts: ${steered.title}`,
+    targetPath,
+    newContents,
+    commitMessage: `evolve: record steer #${steered.number} in steerTarget.ts`,
+  };
+}
+
+function proposeJournalNote(ctx: PlannerContext, journals: string[]): Plan {
   let max = -1;
   for (const f of journals) {
     const m = f.match(/^(\d+)/);
@@ -68,9 +104,6 @@ function proposeJournalNote(
   const name = `${String(num).padStart(4, '0')}-fake-evolve.md`;
   const targetPath = join(ctx.rootDir, 'journal', name);
   const date = new Date().toISOString().slice(0, 10);
-  const steerBlock = steered
-    ? `Steering issue: #${steered.number}: ${steered.title}`
-    : '(no open issues — alternating FakePlanner path)';
   const newContents = `# Journal ${String(num).padStart(4, '0')} — FakePlanner evolve note
 
 **Date:** ${date}  
@@ -88,7 +121,7 @@ than one deterministic proposal type.
 
 ## Steering
 
-${steerBlock}
+(no open issues — alternating FakePlanner path)
 
 ## Open issues (steer)
 
@@ -99,17 +132,10 @@ ${ctx.openIssues || '(no open issues)'}
 Steer via GitHub issues. Optional OpenAI-compatible planner behind \`SEEDLING_API_KEY\`.
 `;
 
-  const summary = steered
-    ? `Append journal note ${name} (steer #${steered.number}: ${steered.title})`
-    : `Append journal note ${name}`;
-  const commitMessage = steered
-    ? `evolve: append journal ${name} (steer #${steered.number})`
-    : `evolve: append journal ${name}`;
-
   return {
-    summary,
+    summary: `Append journal note ${name}`,
     targetPath,
     newContents,
-    commitMessage,
+    commitMessage: `evolve: append journal ${name}`,
   };
 }

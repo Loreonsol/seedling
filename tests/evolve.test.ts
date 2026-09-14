@@ -3,7 +3,11 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
-import { FakePlanner } from '../src/fakePlanner.js';
+import {
+  FakePlanner,
+  buildSteerTargetContents,
+  sanitizeSteerTitle,
+} from '../src/fakePlanner.js';
 import { VERSION } from '../src/version.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -31,6 +35,29 @@ function makeTempRepo(journalNames: string[]): string {
 describe('VERSION', () => {
   it('is semver-ish (major.minor.patch)', () => {
     expect(VERSION).toMatch(/^\d+\.\d+\.\d+$/);
+  });
+});
+
+describe('sanitizeSteerTitle', () => {
+  it('escapes quotes and strips control chars', () => {
+    expect(sanitizeSteerTitle("fix it's fine\nnext")).toBe("fix it\\'s fine next");
+  });
+
+  it('truncates long titles', () => {
+    expect(sanitizeSteerTitle('x'.repeat(200)).length).toBe(120);
+  });
+});
+
+describe('buildSteerTargetContents', () => {
+  it('emits STEER_ISSUE and STEER_TITLE exports', () => {
+    const text = buildSteerTargetContents({
+      number: 7,
+      title: "teach planner to prefer issue titles",
+    });
+    expect(text).toContain('export const STEER_ISSUE = 7;');
+    expect(text).toContain(
+      "export const STEER_TITLE = 'teach planner to prefer issue titles';",
+    );
   });
 });
 
@@ -77,8 +104,8 @@ describe('FakePlanner', () => {
     expect(plan.newContents).toMatch(/plan → edit → test → commit/);
   });
 
-
-  it('surfaces open issues in journal notes', async () => {
+  it('surfaces open issues in unsteered journal notes', async () => {
+    // Odd journal count + placeholder issues string (no parseable - #N line).
     tempRoot = makeTempRepo(['0000-a.md']);
     const planner = new FakePlanner();
     const plan = await planner.propose({
@@ -86,17 +113,17 @@ describe('FakePlanner', () => {
       latestJournal: 'test',
       version: VERSION,
       rootDir: tempRoot,
-      openIssues: '- #7: teach planner to prefer issue titles',
+      openIssues: '(gh unavailable — treating as no open issues)',
     });
 
     expect(plan.summary).toMatch(/Append journal note/);
     expect(plan.newContents).toMatch(/## Open issues \(steer\)/);
-    expect(plan.newContents).toContain('#7: teach planner to prefer issue titles');
+    expect(plan.newContents).toContain('gh unavailable');
   });
 
-
-  it('prefers first open issue title over VERSION bump', async () => {
-    // Even journal count would normally bump VERSION; open issues override.
+  it('when steered, proposes bounded steerTarget.ts code edit', async () => {
+    // Even journal count would normally bump VERSION; open issues override
+    // with a bounded source edit shaped by the issue title.
     tempRoot = makeTempRepo(['0000-a.md', '0001-b.md']);
     const planner = new FakePlanner();
     const plan = await planner.propose({
@@ -109,11 +136,11 @@ describe('FakePlanner', () => {
 
     expect(plan.summary).toMatch(/steer #7/);
     expect(plan.summary).toContain('teach planner to prefer issue titles');
-    expect(plan.targetPath).toContain('journal');
+    expect(plan.targetPath).toMatch(/steerTarget\.ts$/);
     expect(plan.commitMessage).toMatch(/steer #7/);
-    expect(plan.newContents).toMatch(/## Steering/);
+    expect(plan.newContents).toContain('export const STEER_ISSUE = 7;');
     expect(plan.newContents).toContain(
-      'Steering issue: #7: teach planner to prefer issue titles',
+      "export const STEER_TITLE = 'teach planner to prefer issue titles';",
     );
   });
 
