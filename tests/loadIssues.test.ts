@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatOpenIssues } from '../src/loadIssues.js';
+import { formatOpenIssues, parseFirstOpenIssue } from '../src/loadIssues.js';
 
 describe('formatOpenIssues', () => {
   it('returns placeholder when empty', () => {
@@ -15,5 +15,20 @@ describe('formatOpenIssues', () => {
     ).toBe(
       '- #3: Read issues into planner context\n- #4: Wire CI',
     );
+  });
+});
+
+describe('parseFirstOpenIssue', () => {
+  it('returns null for placeholder or empty', () => {
+    expect(parseFirstOpenIssue('(no open issues)')).toBeNull();
+    expect(parseFirstOpenIssue('')).toBeNull();
+  });
+
+  it('parses the first markdown list issue', () => {
+    expect(
+      parseFirstOpenIssue(
+        '- #7: teach planner to prefer issue titles\n- #8: Wire CI',
+      ),
+    ).toEqual({ number: 7, title: 'teach planner to prefer issue titles' });
   });
 });

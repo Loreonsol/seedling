@@ -94,6 +94,29 @@ describe('FakePlanner', () => {
     expect(plan.newContents).toContain('#7: teach planner to prefer issue titles');
   });
 
+
+  it('prefers first open issue title over VERSION bump', async () => {
+    // Even journal count would normally bump VERSION; open issues override.
+    tempRoot = makeTempRepo(['0000-a.md', '0001-b.md']);
+    const planner = new FakePlanner();
+    const plan = await planner.propose({
+      northStar: 'test',
+      latestJournal: 'test',
+      version: VERSION,
+      rootDir: tempRoot,
+      openIssues: '- #7: teach planner to prefer issue titles',
+    });
+
+    expect(plan.summary).toMatch(/steer #7/);
+    expect(plan.summary).toContain('teach planner to prefer issue titles');
+    expect(plan.targetPath).toContain('journal');
+    expect(plan.commitMessage).toMatch(/steer #7/);
+    expect(plan.newContents).toMatch(/## Steering/);
+    expect(plan.newContents).toContain(
+      'Steering issue: #7: teach planner to prefer issue titles',
+    );
+  });
+
   it('can parse the on-disk version.ts', () => {
     const text = readFileSync(join(root, 'src', 'version.ts'), 'utf8');
     expect(text).toContain(`VERSION = '${VERSION}'`);

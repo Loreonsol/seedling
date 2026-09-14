@@ -14,6 +14,22 @@ export function formatOpenIssues(
     .join('\n');
 }
 
+/** First open issue from a formatOpenIssues / loadOpenIssues string, if any. */
+export function parseFirstOpenIssue(
+  openIssues: string,
+): { number: number; title: string } | null {
+  const line = openIssues
+    .split('\n')
+    .map((l) => l.trim())
+    .find((l) => l.startsWith('- #'));
+  if (!line) return null;
+  const m = line.match(/^- #(\d+):\s*(.+)$/);
+  if (!m) return null;
+  const title = m[2]!.trim();
+  if (!title) return null;
+  return { number: Number(m[1]), title };
+}
+
 export function loadOpenIssues(rootDir: string): string {
   const result = spawnSync(
     'gh',
