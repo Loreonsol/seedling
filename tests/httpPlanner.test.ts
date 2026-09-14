@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   extractAssistantContent,
+  extractJsonObject,
   HttpPlanner,
   parsePlanJson,
   resolveTargetPath,
@@ -29,6 +30,26 @@ describe('resolveTargetPath', () => {
   });
 });
 
+
+describe('extractJsonObject', () => {
+  it('returns plain JSON unchanged', () => {
+    const raw = '{"summary":"s","targetPath":"src/x.ts","newContents":"a","commitMessage":"evolve: x"}';
+    expect(extractJsonObject(raw)).toBe(raw);
+  });
+
+  it('extracts object from surrounding prose', () => {
+    const raw =
+      'Sure — here is the plan:\n{"summary":"s","targetPath":"journal/n.md","newContents":"# n\n","commitMessage":"evolve: n"}\nHope that helps!';
+    expect(extractJsonObject(raw)).toBe(
+      '{"summary":"s","targetPath":"journal/n.md","newContents":"# n\n","commitMessage":"evolve: n"}',
+    );
+  });
+
+  it('throws when no object is present', () => {
+    expect(() => extractJsonObject('no json here')).toThrow(/no JSON object/);
+  });
+});
+
 describe('parsePlanJson', () => {
   it('parses plain JSON plan', () => {
     const plan = parsePlanJson(
@@ -52,6 +73,16 @@ describe('parsePlanJson', () => {
       root,
     );
     expect(plan.targetPath).toBe(`${root}/src/version.ts`);
+  });
+
+  it('parses plan wrapped in prose', () => {
+    const plan = parsePlanJson(
+      'Here you go:\n{"summary":"note","targetPath":"journal/y.md","newContents":"# y\\n","commitMessage":"evolve: y"}\nDone.',
+      root,
+    );
+    expect(plan.summary).toBe('note');
+    expect(plan.targetPath).toBe(`${root}/journal/y.md`);
+    expect(plan.newContents).toBe('# y\n');
   });
 
   it('rejects incomplete JSON', () => {

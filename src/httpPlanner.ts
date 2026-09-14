@@ -55,9 +55,9 @@ export class HttpPlanner implements Planner {
     const fetchFn = this.options.fetchFn ?? (globalThis.fetch as FetchLike);
 
     const system = `You are Seedling's planner. Propose ONE tiny, safe file change.
-Reply with ONLY JSON (no markdown) matching:
+Reply with ONLY JSON (no markdown fences) matching:
 {"summary":"...","targetPath":"repo-relative/path","newContents":"...","commitMessage":"evolve: ..."}
-Rules: stay under the repo root; prefer journal/ or src/; never invent secrets; keep changes reversible.`;
+Rules: stay under the repo root; only edit journal/ or src/; never invent secrets; keep changes reversible; one file only.`;
 
     const user = `North star:\n${ctx.northStar}\n\nVersion: ${ctx.version}\n\nLatest journal:\n${ctx.latestJournal}\n\nOpen issues:\n${ctx.openIssues}`;
 
@@ -100,14 +100,60 @@ export function extractAssistantContent(rawBody: string): string {
 }
 
 /**
- * Parse model JSON into a Plan and resolve targetPath under rootDir.
- * Strips optional ```json fences.
+ * Best-effort: pull the first JSON object out of model prose / fences.
+ * Models often wrap plans in explanation text; we still want a Plan.
  */
-export function parsePlanJson(text: string, rootDir: string): Plan {
+export function extractJsonObject(text: string): string {
   const stripped = text
     .replace(/^```(?:json)?\s*/i, '')
-    .replace(/\s*```$/, '')
+    .replace(/\s*```$/i, '')
     .trim();
+  try {
+    JSON.parse(stripped);
+    return stripped;
+  } catch {
+    // fall through to brace scan
+  }
+  const start = stripped.indexOf('{');
+  if (start < 0) {
+    throw new Error('HttpPlanner: no JSON object found in assistant content');
+  }
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+  for (let i = start; i < stripped.length; i++) {
+    const ch = stripped[i]!;
+    if (inString) {
+      if (escape) {
+        escape = false;
+      } else if (ch === '\\') {
+        escape = true;
+      } else if (ch === '"') {
+        inString = false;
+      }
+      continue;
+    }
+    if (ch === '"') {
+      inString = true;
+      continue;
+    }
+    if (ch === '{') depth++;
+    else if (ch === '}') {
+      depth--;
+      if (depth === 0) {
+        return stripped.slice(start, i + 1);
+      }
+    }
+  }
+  throw new Error('HttpPlanner: incomplete JSON object in assistant content');
+}
+
+/**
+ * Parse model JSON into a Plan and resolve targetPath under rootDir.
+ * Tolerates optional ```json fences and leading/trailing prose.
+ */
+export function parsePlanJson(text: string, rootDir: string): Plan {
+  const stripped = extractJsonObject(text);
   const data = JSON.parse(stripped) as Partial<Plan>;
   if (
     typeof data.summary !== 'string' ||

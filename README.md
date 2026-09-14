@@ -30,7 +30,7 @@ Or: `./scripts/evolve.sh`
 5. Runs `npm test`
 6. Prints a suggested commit message (does not auto-commit unless you do)
 
-If `SEEDLING_API_KEY` is set, a real OpenAI-compatible planner may be wired later (currently falls back to FakePlanner with a stub notice).
+If `SEEDLING_API_KEY` is set, **HttpPlanner** calls an OpenAI-compatible chat API and repairs common JSON wrapping; on failure it falls back to FakePlanner.
 
 ## Steer via issues
 
