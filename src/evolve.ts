@@ -4,6 +4,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { applyWithTestGate } from './applyChange.js';
 import { FakePlanner } from './fakePlanner.js';
+import { HttpPlanner } from './httpPlanner.js';
 import { loadOpenIssues } from './loadIssues.js';
 import type { Planner, PlannerContext } from './types.js';
 import { VERSION } from './version.js';
@@ -22,14 +23,11 @@ function latestJournal(root: string): string {
 }
 
 function createPlanner(): Planner {
-  // Optional real OpenAI-compatible planner — stub behind SEEDLING_API_KEY.
-  // TODO: implement OpenAI-compatible HTTP planner when key is set.
-  if (process.env.SEEDLING_API_KEY) {
-    console.log(
-      '[evolve] SEEDLING_API_KEY set — real planner stub not implemented yet; using FakePlanner',
-    );
-  }
-  return new FakePlanner();
+  const fake = new FakePlanner();
+  const apiKey = process.env.SEEDLING_API_KEY;
+  if (!apiKey) return fake;
+  console.log('[evolve] SEEDLING_API_KEY set — using HttpPlanner (FakePlanner fallback)');
+  return new HttpPlanner(apiKey, { fallback: fake });
 }
 
 function runTests(root: string): boolean {
