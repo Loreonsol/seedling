@@ -3,6 +3,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { applyWithTestGate } from './applyChange.js';
+import { commitChange } from './commitChange.js';
 import { FakePlanner } from './fakePlanner.js';
 import { HttpPlanner } from './httpPlanner.js';
 import { loadOpenIssues } from './loadIssues.js';
@@ -85,8 +86,19 @@ async function evolve(): Promise<void> {
   }
 
   console.log('[evolve] tests passed');
-  console.log('[evolve] suggested commit message:');
-  console.log(plan.commitMessage);
+
+  const commitResult = commitChange(ROOT, plan.targetPath, plan.commitMessage);
+  if (!commitResult.attempted) {
+    console.log('[evolve] auto-commit: skipped (set SEEDLING_AUTO_COMMIT=1)');
+    console.log('[evolve] suggested commit message:');
+    console.log(plan.commitMessage);
+  } else if (commitResult.committed) {
+    console.log(`[evolve] committed: ${commitResult.message ?? plan.commitMessage}`);
+  } else {
+    console.error(`[evolve] auto-commit failed: ${commitResult.error ?? 'unknown error'}`);
+    console.log('[evolve] suggested commit message:');
+    console.log(plan.commitMessage);
+  }
 }
 
 evolve().catch((err) => {

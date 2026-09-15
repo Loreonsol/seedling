@@ -28,7 +28,7 @@ Or: `./scripts/evolve.sh`
 3. Default planner is **FakePlanner** (no API keys, no spend): bumps the patch version in `src/version.ts`
 4. Writes that single file (allowlisted to `journal/` or `src/` only; when steered via an open issue, FakePlanner records `src/steerTarget.ts`)
 5. Runs `npm test`
-6. Prints a suggested commit message (does not auto-commit unless you do)
+6. Prints a suggested commit message; set `SEEDLING_AUTO_COMMIT=1` to opt in to auto-commit after tests pass (no push)
 
 If `SEEDLING_API_KEY` is set, **HttpPlanner** calls an OpenAI-compatible chat API and repairs common JSON wrapping; on failure it falls back to FakePlanner.
 
