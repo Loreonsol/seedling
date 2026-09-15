@@ -1,5 +1,6 @@
 import { join, normalize, resolve } from 'node:path';
 import type { Plan, Planner, PlannerContext } from './types.js';
+import { assertAllowedWritePath } from './writeAllowlist.js';
 
 export type FetchLike = (
   input: string,
@@ -163,9 +164,11 @@ export function parsePlanJson(text: string, rootDir: string): Plan {
   ) {
     throw new Error('HttpPlanner: plan JSON missing required string fields');
   }
+  const targetPath = resolveTargetPath(rootDir, data.targetPath);
+  assertAllowedWritePath(rootDir, targetPath);
   return {
     summary: data.summary,
-    targetPath: resolveTargetPath(rootDir, data.targetPath),
+    targetPath,
     newContents: data.newContents,
     commitMessage: data.commitMessage,
   };

@@ -90,6 +90,20 @@ describe('parsePlanJson', () => {
       parsePlanJson(JSON.stringify({ summary: 'only' }), root),
     ).toThrow(/missing required/);
   });
+
+  it('rejects plans targeting paths outside journal/|src/', () => {
+    expect(() =>
+      parsePlanJson(
+        JSON.stringify({
+          summary: 'bad',
+          targetPath: 'README.md',
+          newContents: 'x',
+          commitMessage: 'evolve: bad',
+        }),
+        root,
+      ),
+    ).toThrow(/allowlist/);
+  });
 });
 
 describe('extractAssistantContent', () => {

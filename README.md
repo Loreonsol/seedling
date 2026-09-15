@@ -26,7 +26,7 @@ Or: `./scripts/evolve.sh`
 1. Reads `NORTH_STAR.md` + latest `journal/*.md`
 2. Asks a **Planner** for one minimal change
 3. Default planner is **FakePlanner** (no API keys, no spend): bumps the patch version in `src/version.ts`
-4. Writes that single file (bounded to the repo root; when steered via an open issue, FakePlanner records `src/steerTarget.ts`)
+4. Writes that single file (allowlisted to `journal/` or `src/` only; when steered via an open issue, FakePlanner records `src/steerTarget.ts`)
 5. Runs `npm test`
 6. Prints a suggested commit message (does not auto-commit unless you do)
 

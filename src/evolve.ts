@@ -76,7 +76,7 @@ async function evolve(): Promise<void> {
   }
 
   console.log('[evolve] applying change to', plan.targetPath);
-  const result = applyWithTestGate(plan.targetPath, plan.newContents, () => runTests(ROOT));
+  const result = applyWithTestGate(plan.targetPath, plan.newContents, () => runTests(ROOT), ROOT);
   if (!result.ok) {
     console.error('[evolve] tests failed — restored previous contents');
     process.exitCode = 1;
