@@ -30,3 +30,19 @@ export function assertAllowedWritePath(rootDir: string, targetPath: string): voi
     );
   }
 }
+
+/**
+ * Clear message for allowlist / outside-root write refusals; null otherwise.
+ * Used by the evolve CLI to print `[evolve] refused: …` instead of a fatal stack.
+ */
+export function formatEvolveRefusal(err: unknown): string | null {
+  if (!(err instanceof Error)) return null;
+  const msg = err.message;
+  if (
+    msg.startsWith('Refuse write outside allowlist') ||
+    msg.startsWith('Refuse to write outside repo root')
+  ) {
+    return msg;
+  }
+  return null;
+}

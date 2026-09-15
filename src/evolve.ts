@@ -8,6 +8,7 @@ import { HttpPlanner } from './httpPlanner.js';
 import { loadOpenIssues } from './loadIssues.js';
 import type { Planner, PlannerContext } from './types.js';
 import { VERSION } from './version.js';
+import { formatEvolveRefusal } from './writeAllowlist.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
@@ -89,6 +90,11 @@ async function evolve(): Promise<void> {
 }
 
 evolve().catch((err) => {
-  console.error('[evolve] fatal:', err);
+  const refused = formatEvolveRefusal(err);
+  if (refused) {
+    console.error(`[evolve] refused: ${refused}`);
+  } else {
+    console.error('[evolve] fatal:', err);
+  }
   process.exitCode = 1;
 });
