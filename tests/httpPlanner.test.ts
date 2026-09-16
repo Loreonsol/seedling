@@ -16,6 +16,7 @@ const baseCtx: PlannerContext = {
   version: '0.1.0',
   rootDir: root,
   openIssues: '(no open issues)',
+  recentCommits: '(no recent commits)',
 };
 
 describe('resolveTargetPath', () => {

@@ -60,7 +60,7 @@ Reply with ONLY JSON (no markdown fences) matching:
 {"summary":"...","targetPath":"repo-relative/path","newContents":"...","commitMessage":"evolve: ..."}
 Rules: stay under the repo root; only edit journal/ or src/; never invent secrets; keep changes reversible; one file only.`;
 
-    const user = `North star:\n${ctx.northStar}\n\nVersion: ${ctx.version}\n\nLatest journal:\n${ctx.latestJournal}\n\nOpen issues:\n${ctx.openIssues}`;
+    const user = `North star:\n${ctx.northStar}\n\nVersion: ${ctx.version}\n\nLatest journal:\n${ctx.latestJournal}\n\nOpen issues:\n${ctx.openIssues}\n\nRecent commits:\n${ctx.recentCommits}`;
 
     const res = await fetchFn(`${baseUrl}/chat/completions`, {
       method: 'POST',

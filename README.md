@@ -23,7 +23,7 @@ Or: `./scripts/evolve.sh`
 
 ## How evolve works
 
-1. Reads `NORTH_STAR.md` + latest `journal/*.md`
+1. Reads `NORTH_STAR.md` + latest `journal/*.md`, open GitHub issues, and recent commits
 2. Asks a **Planner** for one minimal change
 3. Default planner is **FakePlanner** (no API keys, no spend): bumps the patch version in `src/version.ts`
 4. Writes that single file (allowlisted to `journal/` or `src/` only; when steered via an open issue, FakePlanner records `src/steerTarget.ts`)

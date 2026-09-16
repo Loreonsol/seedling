@@ -71,6 +71,7 @@ describe('FakePlanner', () => {
       version: VERSION,
       rootDir: tempRoot,
       openIssues: '(no open issues)',
+      recentCommits: '(no recent commits)',
     });
 
     expect(plan.summary).toMatch(/Bump VERSION/);
@@ -94,6 +95,7 @@ describe('FakePlanner', () => {
       version: VERSION,
       rootDir: tempRoot,
       openIssues: '(no open issues)',
+      recentCommits: '(no recent commits)',
     });
 
     expect(plan.summary).toMatch(/Append journal note/);
@@ -114,11 +116,14 @@ describe('FakePlanner', () => {
       version: VERSION,
       rootDir: tempRoot,
       openIssues: '(gh unavailable — treating as no open issues)',
+      recentCommits: '(no recent commits)',
     });
 
     expect(plan.summary).toMatch(/Append journal note/);
     expect(plan.newContents).toMatch(/## Open issues \(steer\)/);
     expect(plan.newContents).toContain('gh unavailable');
+    expect(plan.newContents).toMatch(/## Recent commits/);
+    expect(plan.newContents).toContain('(no recent commits)');
   });
 
   it('when steered, proposes bounded steerTarget.ts code edit', async () => {
@@ -132,6 +137,7 @@ describe('FakePlanner', () => {
       version: VERSION,
       rootDir: tempRoot,
       openIssues: '- #7: teach planner to prefer issue titles',
+      recentCommits: '(no recent commits)',
     });
 
     expect(plan.summary).toMatch(/steer #7/);

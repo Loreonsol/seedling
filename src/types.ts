@@ -20,6 +20,8 @@ export interface PlannerContext {
   rootDir: string;
   /** Open GitHub issues summary for steering (or placeholder). */
   openIssues: string;
+  /** Recent git commits summary so the planner sees what just shipped. */
+  recentCommits: string;
 }
 
 export interface Planner {

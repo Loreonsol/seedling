@@ -127,6 +127,10 @@ than one deterministic proposal type.
 
 ${ctx.openIssues || '(no open issues)'}
 
+## Recent commits
+
+${ctx.recentCommits || '(no recent commits)'}
+
 ## Next
 
 Steer via GitHub issues. Optional OpenAI-compatible planner behind \`SEEDLING_API_KEY\`.

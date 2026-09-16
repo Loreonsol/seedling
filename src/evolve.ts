@@ -6,6 +6,7 @@ import { applyWithTestGate } from './applyChange.js';
 import { commitChange } from './commitChange.js';
 import { FakePlanner } from './fakePlanner.js';
 import { HttpPlanner } from './httpPlanner.js';
+import { loadRecentCommits } from './loadCommits.js';
 import { loadOpenIssues } from './loadIssues.js';
 import type { Planner, PlannerContext } from './types.js';
 import { VERSION } from './version.js';
@@ -58,12 +59,16 @@ async function evolve(): Promise<void> {
   const openIssues = loadOpenIssues(ROOT);
   console.log('[evolve] open issues:\n' + openIssues);
 
+  const recentCommits = loadRecentCommits(ROOT);
+  console.log('[evolve] recent commits:\n' + recentCommits);
+
   const ctx: PlannerContext = {
     northStar,
     latestJournal: latestJournal(ROOT),
     version: VERSION,
     rootDir: ROOT,
     openIssues,
+    recentCommits,
   };
 
   const planner = createPlanner();
