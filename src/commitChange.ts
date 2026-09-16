@@ -5,6 +5,7 @@ export type CommitResult = {
   attempted: boolean;
   committed: boolean;
   message?: string;
+  sha?: string;
   error?: string;
 };
 
@@ -61,5 +62,23 @@ export function commitChange(
     return { attempted: true, committed: false, error };
   }
 
-  return { attempted: true, committed: true, message: commitMessage };
+  const result: CommitResult = {
+    attempted: true,
+    committed: true,
+    message: commitMessage,
+  };
+
+  const rev = spawnSync('git', ['rev-parse', 'HEAD'], {
+    cwd: rootDir,
+    encoding: 'utf8',
+    env,
+  });
+  if (rev.status === 0) {
+    const sha = (rev.stdout || '').trim();
+    if (/^[0-9a-f]{7,40}$/i.test(sha)) {
+      result.sha = sha;
+    }
+  }
+
+  return result;
 }

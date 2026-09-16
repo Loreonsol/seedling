@@ -63,6 +63,8 @@ describe('commitChange', () => {
     expect(result.committed).toBe(true);
     expect(result.message).toBe('evolve: auto-commit test');
     expect(result.error).toBeUndefined();
+    expect(result.sha).toBeTruthy();
+    expect(result.sha).toMatch(/^[0-9a-f]{7,40}$/i);
 
     const log = spawnSync('git', ['log', '-1', '--pretty=%s'], {
       cwd: dir,

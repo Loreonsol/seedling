@@ -93,7 +93,9 @@ async function evolve(): Promise<void> {
     console.log('[evolve] suggested commit message:');
     console.log(plan.commitMessage);
   } else if (commitResult.committed) {
-    console.log(`[evolve] committed: ${commitResult.message ?? plan.commitMessage}`);
+    const msg = commitResult.message ?? plan.commitMessage;
+    const shaPart = commitResult.sha ? ` (${commitResult.sha})` : '';
+    console.log(`[evolve] committed: ${msg}${shaPart}`);
   } else {
     console.error(`[evolve] auto-commit failed: ${commitResult.error ?? 'unknown error'}`);
     console.log('[evolve] suggested commit message:');
